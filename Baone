@@ -1,0 +1,1089 @@
+repeat task.wait() until game:IsLoaded()
+
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "👑 BẢO HUB"; Text = "Đang khởi tạo..."; Duration = 3;
+})
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+
+if CoreGui:FindFirstChild("BaoHubUI") then CoreGui:FindFirstChild("BaoHubUI"):Destroy() end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "BaoHubUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = CoreGui
+
+local Flags = {
+    AntiAFK=false, Speed=false, SpeedVal=100, WalkOnWater=false,
+    BringMobs=false, ESPFruits=false, ESPPlayers=false, ESPChests=false, ESPBerries=false,
+    AutoChest=false, AutoBerry=false, AutoFarmNearest=false,
+    Noclip=false, InfiniteJump=false, RemoveHitVFX=false,
+    AutoDinoBones=false, AutoDragonEggs=false, AntiServerHop=false,
+    AutoQuestFarm=false, AutoAcceptQuest=false,
+    AutoFarmBoss=false, AutoGrabFruit=false,
+    AutoEatFruit=false, AutoStoreFruit=false,
+    AutoFarmRaid=false, AutoFarmSeaBeast=false,
+    AutoFarmEliteHunter=false, AutoFarmBounty=false,
+    AutoObservation=false, KillAura=false,
+    AutoBlock=false, AutoHaki=false,
+    AutoUpgradeStats=false, RejoinOnDeath=false,
+    AntiLag=false, ESPBoss=false, ESPSeaBeast=false,
+}
+
+local ESPFolder = Instance.new("Folder")
+ESPFolder.Name = "BaoESP"
+ESPFolder.Parent = workspace
+
+local function ClearESP()
+    for _, v in pairs(ESPFolder:GetChildren()) do v:Destroy() end
+end
+
+local function MakeESPLabel(adornee, text, color)
+    local bb = Instance.new("BillboardGui")
+    bb.Size = UDim2.new(0, 120, 0, 35)
+    bb.AlwaysOnTop = true
+    bb.Adornee = adornee
+    bb.Parent = ESPFolder
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(1,0,1,0)
+    bg.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    bg.BackgroundTransparency = 0.5
+    bg.BorderSizePixel = 0
+    bg.Parent = bb
+    Instance.new("UICorner", bg).CornerRadius = UDim.new(0,4)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1,0,1,0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = color or Color3.fromRGB(255,255,0)
+    lbl.TextSize = 12
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextStrokeTransparency = 0.5
+    lbl.Parent = bg
+    return bb
+end
+
+task.spawn(function()
+    while true do
+        task.wait(55)
+        if Flags.AntiAFK then
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid.Jump = true
+            end
+        end
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChild("Humanoid")
+    if not hum or not hrp then return end
+    if Flags.Speed then hum.WalkSpeed = Flags.SpeedVal end
+    if Flags.WalkOnWater then
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") and (v.Name:lower():find("water") or v.Name:lower():find("ocean") or v.Name:lower():find("sea")) then
+                v.CanCollide = false
+            end
+        end
+    end
+    if Flags.KillAura then
+        pcall(function()
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
+                    if obj ~= char and obj.Humanoid.Health > 0 then
+                        local dist = (obj.HumanoidRootPart.Position - hrp.Position).Magnitude
+                        if dist < 15 then
+                            local tool = char:FindFirstChildWhichIsA("Tool")
+                            if tool then
+                                local remote = tool:FindFirstChildWhichIsA("RemoteEvent")
+                                if remote then pcall(function() remote:FireServer(obj.HumanoidRootPart.CFrame) end) end
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end
+    if Flags.AutoBlock then
+        pcall(function()
+            local rs = game:GetService("ReplicatedStorage")
+            local remote = rs:FindFirstChild("Remotes") and rs.Remotes:FindFirstChild("CommF_")
+            if remote then remote:InvokeServer("Block") end
+        end)
+    end
+    if Flags.AutoObservation then
+        pcall(function()
+            local rs = game:GetService("ReplicatedStorage")
+            local remote = rs:FindFirstChild("Remotes") and rs.Remotes:FindFirstChild("CommF_")
+            if remote then remote:InvokeServer("Observation") end
+        end)
+    end
+end)
+
+RunService.Stepped:Connect(function()
+    if Flags.Noclip then
+        local char = LocalPlayer.Character
+        if char then
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end
+            end
+        end
+    end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if Flags.InfiniteJump then
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+    if Flags.RejoinOnDeath then
+        local hum = char:WaitForChild("Humanoid")
+        hum.Died:Connect(function()
+            task.wait(3)
+            game:GetService("TeleportService"):Teleport(game.PlaceId, LocalPlayer)
+        end)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if Flags.AutoHaki then
+            pcall(function()
+                local rs = game:GetService("ReplicatedStorage")
+                local remote = rs:FindFirstChild("Remotes") and rs.Remotes:FindFirstChild("CommF_")
+                if remote then remote:InvokeServer("Buso") end
+            end)
+        end
+        if Flags.AutoUpgradeStats then
+            pcall(function()
+                local rs = game:GetService("ReplicatedStorage")
+                local remote = rs:FindFirstChild("Remotes") and rs.Remotes:FindFirstChild("CommF_")
+                if remote then
+                    remote:InvokeServer("AddStat","Defense")
+                    remote:InvokeServer("AddStat","Melee")
+                    remote:InvokeServer("AddStat","Sword")
+                end
+            end)
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.3)
+        if Flags.BringMobs then
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local hrp = char.HumanoidRootPart
+                pcall(function()
+                    local enemyFolder = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("Mobs") or workspace
+                    for _, mob in pairs(enemyFolder:GetChildren()) do
+                        if mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                            local dist = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
+                            if dist < 1000 then
+                                mob.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(math.random(-5,5), 0, math.random(-5,5))
+                                mob.HumanoidRootPart.CanCollide = false
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.15)
+        if Flags.AutoFarmNearest then
+            local char = LocalPlayer.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
+            local hrp = char.HumanoidRootPart
+            local hum = char:FindFirstChild("Humanoid")
+            pcall(function()
+                local nearest, nearDist = nil, math.huge
+                local enemyFolder = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("Mobs") or workspace
+                for _, mob in pairs(enemyFolder:GetChildren()) do
+                    if mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                        local d = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
+                        if d < nearDist then nearest = mob; nearDist = d end
+                    end
+                end
+                if nearest then
+                    hrp.CFrame = nearest.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3.5)
+                    hum:ChangeState(Enum.HumanoidStateType.Jumping)
+                end
+            end)
+        end
+        if Flags.AutoFarmBoss then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+                local hrp = char.HumanoidRootPart
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj:IsA("Model") and obj.Name:lower():find(Flags.BossName or "") then
+                        local bhrp = obj:FindFirstChild("HumanoidRootPart")
+                        local bhum = obj:FindFirstChild("Humanoid")
+                        if bhrp and bhum and bhum.Health > 0 then
+                            hrp.CFrame = bhrp.CFrame * CFrame.new(0, 0, 3.5)
+                        end
+                    end
+                end
+            end)
+        end
+        if Flags.AutoFarmSeaBeast then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+                local hrp = char.HumanoidRootPart
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj:IsA("Model") and (obj.Name:lower():find("seabeast") or obj.Name:lower():find("sea beast")) then
+                        local bhrp = obj:FindFirstChild("HumanoidRootPart")
+                        local bhum = obj:FindFirstChild("Humanoid")
+                        if bhrp and bhum and bhum.Health > 0 then
+                            hrp.CFrame = bhrp.CFrame * CFrame.new(0, 0, 4)
+                        end
+                    end
+                end
+            end)
+        end
+        if Flags.AutoFarmEliteHunter then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+                local hrp = char.HumanoidRootPart
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj:IsA("Model") and (obj.Name:lower():find("elite") or obj.Name:lower():find("hunter")) then
+                        local bhrp = obj:FindFirstChild("HumanoidRootPart")
+                        local bhum = obj:FindFirstChild("Humanoid")
+                        if bhrp and bhum and bhum.Health > 0 then
+                            hrp.CFrame = bhrp.CFrame * CFrame.new(0, 0, 4)
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        local char = LocalPlayer.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
+        local hrp = char.HumanoidRootPart
+        pcall(function()
+            if Flags.AutoChest then
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if (v:IsA("Model") or v:IsA("BasePart")) and v.Name:lower():find("chest") then
+                        local pos = v:IsA("Model") and (v.PrimaryPart and v.PrimaryPart.Position or v:GetModelCFrame().Position) or v.Position
+                        if (pos - hrp.Position).Magnitude < 3000 then
+                            hrp.CFrame = CFrame.new(pos) * CFrame.new(0,3,0)
+                            task.wait(0.3)
+                        end
+                    end
+                end
+            end
+            if Flags.AutoBerry then
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("BasePart") and (v.Name == "Berry" or v.Name == "Money" or v.Name:lower():find("berry")) then
+                        if (v.Position - hrp.Position).Magnitude < 500 then
+                            hrp.CFrame = CFrame.new(v.Position)
+                            task.wait(0.1)
+                        end
+                    end
+                end
+            end
+            if Flags.AutoGrabFruit then
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj:IsA("Model") and (obj.Name:find("Fruit") or obj.Name:find("fruit") or obj.Name:find("Blox") or obj.Name:find("Devil")) then
+                        local part = obj:FindFirstChild("Handle") or obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+                        if part and (part.Position - hrp.Position).Magnitude < 3000 then
+                            hrp.CFrame = CFrame.new(part.Position) * CFrame.new(0,3,0)
+                            task.wait(0.3)
+                            pcall(function()
+                                local rs = game:GetService("ReplicatedStorage")
+                                local remote = rs:FindFirstChild("Remotes") and rs.Remotes:FindFirstChild("CommF_")
+                                if remote then remote:InvokeServer("GetFruit",obj) end
+                            end)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if Flags.AutoQuestFarm then
+            pcall(function()
+                local rs = game:GetService("ReplicatedStorage")
+                local remote = rs:FindFirstChild("Remotes") and rs.Remotes:FindFirstChild("CommF_")
+                if remote then remote:InvokeServer("StartQuest","Starter") end
+            end)
+        end
+        if Flags.AutoAcceptQuest then
+            pcall(function()
+                local rs = game:GetService("ReplicatedStorage")
+                local remote = rs:FindFirstChild("Remotes") and rs.Remotes:FindFirstChild("CommF_")
+                if remote then remote:InvokeServer("GetQuest") end
+            end)
+        end
+        if Flags.AntiLag then
+            pcall(function()
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
+                        v.Enabled = false
+                    end
+                end
+                game:GetService("Lighting").GlobalShadows = false
+                game:GetService("Lighting").FogEnd = 100000
+            end)
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if Flags.RemoveHitVFX then
+        pcall(function()
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
+                    v.Enabled = false
+                end
+            end
+        end)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(2)
+        ClearESP()
+        pcall(function()
+            if Flags.ESPFruits then
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("Model") and (v.Name:find("Fruit") or v.Name:find("fruit") or v.Name:find("Devil") or v.Name:find("Blox")) then
+                        local part = v:FindFirstChild("Handle") or v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart")
+                        if part then MakeESPLabel(part, "🍎 "..v.Name, Color3.fromRGB(255,80,80)) end
+                    end
+                end
+            end
+            if Flags.ESPBerries then
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("BasePart") and (v.Name == "Berry" or v.Name:lower():find("berry") or v.Name == "Money") then
+                        MakeESPLabel(v, "💰 Berry", Color3.fromRGB(255,215,0))
+                    end
+                end
+            end
+            if Flags.ESPPlayers then
+                for _, plr in pairs(Players:GetPlayers()) do
+                    if plr ~= LocalPlayer and plr.Character then
+                        local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+                        local hum = plr.Character:FindFirstChild("Humanoid")
+                        if hrp then
+                            local hp = hum and math.floor(hum.Health).."/"..math.floor(hum.MaxHealth) or "?"
+                            MakeESPLabel(hrp, "👤 "..plr.Name.."\n❤️ "..hp, Color3.fromRGB(100,200,255))
+                        end
+                    end
+                end
+            end
+            if Flags.ESPChests then
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if (v:IsA("Model") or v:IsA("BasePart")) and v.Name:lower():find("chest") then
+                        local part = v:IsA("Model") and (v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart")) or v
+                        if part then MakeESPLabel(part, "📦 Chest", Color3.fromRGB(255,215,0)) end
+                    end
+                end
+            end
+            if Flags.ESPBoss then
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("Humanoid") then
+                        local name = obj.Name:lower()
+                        if name:find("boss") or name:find("dragon") or name:find("hydra") or name:find("shark") then
+                            MakeESPLabel(obj.HumanoidRootPart, "👹 "..obj.Name, Color3.fromRGB(255,50,50))
+                        end
+                    end
+                end
+            end
+            if Flags.ESPSeaBeast then
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj:IsA("Model") and (obj.Name:lower():find("seabeast") or obj.Name:lower():find("sea beast")) then
+                        local part = obj:FindFirstChild("HumanoidRootPart")
+                        if part then MakeESPLabel(part, "🌊 SeaBeast", Color3.fromRGB(0,200,255)) end
+                    end
+                end
+            end
+        end)
+    end
+end)local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.new(0, 520, 0, 360)
+Main.Position = UDim2.new(0.5, -260, 0.5, -180)
+Main.BackgroundColor3 = Color3.fromRGB(15, 10, 25)
+Main.BorderSizePixel = 0
+Main.Parent = ScreenGui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = Color3.fromRGB(180, 50, 255)
+mainStroke.Thickness = 1.5
+mainStroke.Parent = Main
+
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 36)
+TitleBar.BackgroundColor3 = Color3.fromRGB(25, 10, 40)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = Main
+Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 12)
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -50, 1, 0)
+TitleLabel.Position = UDim2.new(0, 12, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "👑 BẢO HUB  by Bảo"
+TitleLabel.TextColor3 = Color3.fromRGB(220, 100, 255)
+TitleLabel.TextSize = 14
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TitleBar
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Position = UDim2.new(1, -32, 0, 5)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255,255,255)
+CloseBtn.TextSize = 12
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Parent = TitleBar
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
+CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+
+local dragging, dragStart, startPos
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true; dragStart = input.Position; startPos = Main.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+end)
+
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.new(0, 155, 1, -36)
+Sidebar.Position = UDim2.new(0, 0, 0, 36)
+Sidebar.BackgroundColor3 = Color3.fromRGB(20, 10, 35)
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = Main
+
+local SearchBox = Instance.new("TextBox")
+SearchBox.Size = UDim2.new(1, -14, 0, 28)
+SearchBox.Position = UDim2.new(0, 7, 0, 6)
+SearchBox.BackgroundColor3 = Color3.fromRGB(30, 15, 50)
+SearchBox.TextColor3 = Color3.fromRGB(200, 200, 200)
+SearchBox.PlaceholderText = "🔍 Tìm kiếm..."
+SearchBox.PlaceholderColor3 = Color3.fromRGB(120, 80, 150)
+SearchBox.Text = ""
+SearchBox.TextSize = 11
+SearchBox.Font = Enum.Font.Gotham
+SearchBox.BorderSizePixel = 0
+SearchBox.ClearTextOnFocus = false
+SearchBox.Parent = Sidebar
+Instance.new("UICorner", SearchBox).CornerRadius = UDim.new(0, 6)
+
+local SideScroll = Instance.new("ScrollingFrame")
+SideScroll.Size = UDim2.new(1, 0, 1, -42)
+SideScroll.Position = UDim2.new(0, 0, 0, 42)
+SideScroll.BackgroundTransparency = 1
+SideScroll.ScrollBarThickness = 2
+SideScroll.ScrollBarImageColor3 = Color3.fromRGB(180, 50, 255)
+SideScroll.BorderSizePixel = 0
+SideScroll.Parent = Sidebar
+local SideList = Instance.new("UIListLayout")
+SideList.Padding = UDim.new(0, 2)
+SideList.Parent = SideScroll
+
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, -155, 1, -36)
+Content.Position = UDim2.new(0, 155, 0, 36)
+Content.BackgroundColor3 = Color3.fromRGB(15, 10, 25)
+Content.BorderSizePixel = 0
+Content.Parent = Main
+
+local ContentTitle = Instance.new("TextLabel")
+ContentTitle.Size = UDim2.new(1, -16, 0, 28)
+ContentTitle.Position = UDim2.new(0, 8, 0, 4)
+ContentTitle.BackgroundTransparency = 1
+ContentTitle.Text = "Discord"
+ContentTitle.TextColor3 = Color3.fromRGB(220, 100, 255)
+ContentTitle.TextSize = 15
+ContentTitle.Font = Enum.Font.GothamBold
+ContentTitle.TextXAlignment = Enum.TextXAlignment.Left
+ContentTitle.Parent = Content
+
+local ContentScroll = Instance.new("ScrollingFrame")
+ContentScroll.Size = UDim2.new(1, -8, 1, -36)
+ContentScroll.Position = UDim2.new(0, 4, 0, 36)
+ContentScroll.BackgroundTransparency = 1
+ContentScroll.ScrollBarThickness = 2
+ContentScroll.ScrollBarImageColor3 = Color3.fromRGB(180, 50, 255)
+ContentScroll.BorderSizePixel = 0
+ContentScroll.Parent = Content
+local ContentList = Instance.new("UIListLayout")
+ContentList.Padding = UDim.new(0, 5)
+ContentList.Parent = ContentScroll
+ContentList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ContentScroll.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 10)
+end)
+
+local function MakeSection(parent, title)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, -8, 0, 24)
+    f.BackgroundColor3 = Color3.fromRGB(35, 15, 60)
+    f.BorderSizePixel = 0
+    f.Parent = parent
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, 6)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, 0, 1, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = title
+    lbl.TextColor3 = Color3.fromRGB(220, 100, 255)
+    lbl.TextSize = 12
+    lbl.Font = Enum.Font.GothamBold
+    lbl.Parent = f
+end
+
+local function MakeToggle(parent, name, desc, callback)
+    local h = desc ~= "" and 46 or 34
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, -8, 0, h)
+    f.BackgroundColor3 = Color3.fromRGB(22, 12, 38)
+    f.BorderSizePixel = 0
+    f.Parent = parent
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, 6)
+    local nameLbl = Instance.new("TextLabel")
+    nameLbl.Size = UDim2.new(1, -40, 0, 18)
+    nameLbl.Position = UDim2.new(0, 8, 0, 5)
+    nameLbl.BackgroundTransparency = 1
+    nameLbl.Text = name
+    nameLbl.TextColor3 = Color3.fromRGB(240, 220, 255)
+    nameLbl.TextSize = 11
+    nameLbl.Font = Enum.Font.GothamBold
+    nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+    nameLbl.Parent = f
+    if desc ~= "" then
+        local d = Instance.new("TextLabel")
+        d.Size = UDim2.new(1, -40, 0, 14)
+        d.Position = UDim2.new(0, 8, 0, 24)
+        d.BackgroundTransparency = 1
+        d.Text = desc
+        d.TextColor3 = Color3.fromRGB(150, 100, 180)
+        d.TextSize = 10
+        d.Font = Enum.Font.Gotham
+        d.TextXAlignment = Enum.TextXAlignment.Left
+        d.TextWrapped = true
+        d.Parent = f
+    end
+    local toggled = false
+    local box = Instance.new("Frame")
+    box.Size = UDim2.new(0, 20, 0, 20)
+    box.Position = UDim2.new(1, -26, 0.5, -10)
+    box.BackgroundColor3 = Color3.fromRGB(35, 15, 55)
+    box.BorderSizePixel = 0
+    box.Parent = f
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
+    local s = Instance.new("UIStroke")
+    s.Color = Color3.fromRGB(180, 50, 255)
+    s.Thickness = 1.5
+    s.Parent = box
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(0.7,0,0.7,0)
+    fill.Position = UDim2.new(0.15,0,0.15,0)
+    fill.BackgroundColor3 = Color3.fromRGB(180, 50, 255)
+    fill.BorderSizePixel = 0
+    fill.Visible = false
+    fill.Parent = box
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 3)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1,0,1,0)
+    btn.BackgroundTransparency = 1
+    btn.Text = ""
+    btn.Parent = f
+    btn.MouseButton1Click:Connect(function()
+        toggled = not toggled
+        fill.Visible = toggled
+        if callback then callback(toggled) end
+    end)
+end
+
+local function MakeButton(parent, name, desc, callback)
+    local h = desc ~= "" and 46 or 34
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, -8, 0, h)
+    f.BackgroundColor3 = Color3.fromRGB(22, 12, 38)
+    f.BorderSizePixel = 0
+    f.Parent = parent
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, 6)
+    local nameLbl = Instance.new("TextLabel")
+    nameLbl.Size = UDim2.new(1, -90, 0, 18)
+    nameLbl.Position = UDim2.new(0, 8, 0, 5)
+    nameLbl.BackgroundTransparency = 1
+    nameLbl.Text = name
+    nameLbl.TextColor3 = Color3.fromRGB(240, 220, 255)
+    nameLbl.TextSize = 11
+    nameLbl.Font = Enum.Font.GothamBold
+    nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+    nameLbl.Parent = f
+    if desc ~= "" then
+        local d = Instance.new("TextLabel")
+        d.Size = UDim2.new(1, -90, 0, 14)
+        d.Position = UDim2.new(0, 8, 0, 24)
+        d.BackgroundTransparency = 1
+        d.Text = desc
+        d.TextColor3 = Color3.fromRGB(150, 100, 180)
+        d.TextSize = 10
+        d.Font = Enum.Font.Gotham
+        d.TextXAlignment = Enum.TextXAlignment.Left
+        d.Parent = f
+    end
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 65, 0, 24)
+    btn.Position = UDim2.new(1, -72, 0.5, -12)
+    btn.BackgroundColor3 = Color3.fromRGB(140, 30, 200)
+    btn.Text = "Click"
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.TextSize = 11
+    btn.Font = Enum.Font.GothamBold
+    btn.BorderSizePixel = 0
+    btn.Parent = f
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 12)
+    btn.MouseButton1Click:Connect(function() if callback then callback() end end)
+end
+
+local function MakeLabel(parent, text, h)
+    h = h or 40
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, -8, 0, h)
+    f.BackgroundColor3 = Color3.fromRGB(22, 12, 38)
+    f.BorderSizePixel = 0
+    f.Parent = parent
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, 6)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -16, 1, 0)
+    lbl.Position = UDim2.new(0, 8, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = Color3.fromRGB(200, 180, 220)
+    lbl.TextSize = 11
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextWrapped = true
+    lbl.Parent = f
+end
+
+local function MakeSlider(parent, name, min, max, default, callback)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, -8, 0, 46)
+    f.BackgroundColor3 = Color3.fromRGB(22, 12, 38)
+    f.BorderSizePixel = 0
+    f.Parent = parent
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, 6)
+    local nameLbl = Instance.new("TextLabel")
+    nameLbl.Size = UDim2.new(1, -50, 0, 18)
+    nameLbl.Position = UDim2.new(0, 8, 0, 4)
+    nameLbl.BackgroundTransparency = 1
+    nameLbl.Text = name
+    nameLbl.TextColor3 = Color3.fromRGB(240, 220, 255)
+    nameLbl.TextSize = 11
+    nameLbl.Font = Enum.Font.GothamBold
+    nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+    nameLbl.Parent = f
+    local valLbl = Instance.new("TextLabel")
+    valLbl.Size = UDim2.new(0, 40, 0, 18)
+    valLbl.Position = UDim2.new(1, -46, 0, 4)
+    valLbl.BackgroundTransparency = 1
+    valLbl.Text = tostring(default)
+    valLbl.TextColor3 = Color3.fromRGB(220, 100, 255)
+    valLbl.TextSize = 11
+    valLbl.Font = Enum.Font.GothamBold
+    valLbl.Parent = f
+    local track = Instance.new("Frame")
+    track.Size = UDim2.new(1, -16, 0, 5)
+    track.Position = UDim2.new(0, 8, 0, 32)
+    track.BackgroundColor3 = Color3.fromRGB(35, 15, 60)
+    track.BorderSizePixel = 0
+    track.Parent = f
+    Instance.new("UICorner", track).CornerRadius = UDim.new(1,0)
+    local fill2 = Instance.new("Frame")
+    fill2.Size = UDim2.new((default-min)/(max-min), 0, 1, 0)
+    fill2.BackgroundColor3 = Color3.fromRGB(180, 50, 255)
+    fill2.BorderSizePixel = 0
+    fill2.Parent = track
+    Instance.new("UICorner", fill2).CornerRadius = UDim.new(1,0)
+    local sliding = false
+    track.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then sliding = true end
+    end)
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then sliding = false end
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if sliding and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            local rel = math.clamp((i.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+            local val = math.floor(min + (max-min)*rel)
+            fill2.Size = UDim2.new(rel, 0, 1, 0)
+            valLbl.Text = tostring(val)
+            if callback then callback(val) end
+        end
+    end)
+end
+
+local activeBtn = nil
+local function MakeSideBtn(name, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -8, 0, 30)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 12, 42)
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(200, 170, 230)
+    btn.TextSize = 11
+    btn.Font = Enum.Font.Gotham
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.BorderSizePixel = 0
+    btn.Parent = SideScroll
+    local pad = Instance.new("UIPadding")
+    pad.PaddingLeft = UDim.new(0, 10)
+    pad.Parent = btn
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.MouseButton1Click:Connect(function()
+        if activeBtn then activeBtn.BackgroundColor3 = Color3.fromRGB(25,12,42); activeBtn.TextColor3 = Color3.fromRGB(200,170,230) end
+        activeBtn = btn
+        btn.BackgroundColor3 = Color3.fromRGB(120, 30, 180)
+        btn.TextColor3 = Color3.fromRGB(255,255,255)
+        for _, c in pairs(ContentScroll:GetChildren()) do
+            if not c:IsA("UIListLayout") then c:Destroy() end
+        end
+        ContentTitle.Text = name
+        if callback then callback() end
+    end)
+    return btn
+end
+
+local Islands = {
+    ["Starter Island"]=CFrame.new(-1324.8,35.6,3789.9),
+    ["Marine Starter"]=CFrame.new(-1004.9,19.3,1444.9),
+    ["Pirate Village"]=CFrame.new(-1142.3,119.0,-546.3),
+    ["Jungle"]=CFrame.new(-1280.2,136.0,-2090.1),
+    ["Pirate Ship"]=CFrame.new(1050.3,7.8,-2250.0),
+    ["Desert"]=CFrame.new(929.2,143.0,-2210.0),
+    ["Middle Town"]=CFrame.new(317.1,75.0,784.0),
+    ["Frozen Village"]=CFrame.new(1337.3,136.5,-1349.6),
+    ["Marine Fortress"]=CFrame.new(-1390.7,19.0,144.0),
+    ["Skylands"]=CFrame.new(-4883.7,872.0,-1809.0),
+    ["Dressrosa"]=CFrame.new(-4534.6,208.5,-3629.8),
+    ["Greenbit"]=CFrame.new(-4671.2,327.1,-5438.4),
+    ["Fountain City"]=CFrame.new(-5498.8,14.7,2453.5),
+    ["Kingdom of Rose"]=CFrame.new(-984.7,63.7,-4100.0),
+    ["Magma Village"]=CFrame.new(925.1,124.0,-5481.2),
+    ["Underwater City"]=CFrame.new(61400.0,-2032.0,-3307.0),
+    ["Port Town"]=CFrame.new(-26453.8,143.5,-4455.3),
+    ["Hydra Island"]=CFrame.new(-25000.0,0,0),
+    ["Great Tree"]=CFrame.new(-28080.0,560.0,-1500.0),
+    ["Floating Turtle"]=CFrame.new(-13600.0,315.0,-8200.0),
+}MakeSideBtn("Discord", function()
+    MakeSection(ContentScroll, "👑 BẢO HUB | Community")
+    MakeLabel(ContentScroll, "Chào mừng đến với Bảo Hub! Script được tạo bởi Bảo!", 50)
+    MakeButton(ContentScroll, "Copy Link Discord", "", function()
+        setclipboard("https://discord.gg/trauroblox")
+        game:GetService("StarterGui"):SetCore("SendNotification",{Title="✅";Text="Đã copy Discord!";Duration=2})
+    end)
+    MakeSection(ContentScroll, "Update Log")
+    MakeLabel(ContentScroll, "• Auto Farm Boss\n• Auto Quest Farm\n• Auto Grab Fruit\n• Kill Aura\n• ESP Boss/SeaBeast\n• Anti Lag\n• Rejoin On Death", 90)
+end)
+
+MakeSideBtn("Farm", function()
+    MakeSection(ContentScroll, "Farm Chính")
+    MakeToggle(ContentScroll, "Auto Farm Nearest", "Farm mob gần nhất", function(v) Flags.AutoFarmNearest=v end)
+    MakeToggle(ContentScroll, "Auto Collect Berry", "Tự động nhặt Berry", function(v) Flags.AutoBerry=v end)
+    MakeToggle(ContentScroll, "Auto Collect Chest", "Tự động nhặt Rương", function(v) Flags.AutoChest=v end)
+    MakeToggle(ContentScroll, "Auto Farm Sea Beast", "Farm Sea Beast tự động", function(v) Flags.AutoFarmSeaBeast=v end)
+    MakeToggle(ContentScroll, "Auto Farm Elite Hunter", "Farm Elite Hunter", function(v) Flags.AutoFarmEliteHunter=v end)
+    MakeSection(ContentScroll, "Auto Quest Farm")
+    MakeToggle(ContentScroll, "Auto Quest Farm", "Tự nhận và hoàn thành quest", function(v) Flags.AutoQuestFarm=v end)
+    MakeToggle(ContentScroll, "Auto Accept Quest", "Tự động nhận quest mới", function(v) Flags.AutoAcceptQuest=v end)
+    MakeSection(ContentScroll, "Auto Farm Boss")
+    local bossNameBox = Instance.new("TextBox")
+    bossNameBox.Size = UDim2.new(1, -8, 0, 30)
+    bossNameBox.BackgroundColor3 = Color3.fromRGB(30, 15, 50)
+    bossNameBox.TextColor3 = Color3.fromRGB(240, 220, 255)
+    bossNameBox.PlaceholderText = "Nhập tên Boss..."
+    bossNameBox.PlaceholderColor3 = Color3.fromRGB(150, 100, 180)
+    bossNameBox.Text = ""
+    bossNameBox.TextSize = 11
+    bossNameBox.Font = Enum.Font.Gotham
+    bossNameBox.BorderSizePixel = 0
+    bossNameBox.ClearTextOnFocus = false
+    bossNameBox.Parent = ContentScroll
+    Instance.new("UICorner", bossNameBox).CornerRadius = UDim.new(0, 6)
+    MakeToggle(ContentScroll, "Auto Farm Boss", "Farm boss theo tên đã nhập", function(v)
+        Flags.AutoFarmBoss=v
+        Flags.BossName = bossNameBox.Text:lower()
+    end)
+    MakeSection(ContentScroll, "Farm Blox Fruit")
+    MakeToggle(ContentScroll, "Auto Grab Fruit", "Tự động nhặt Trái Ác Quỷ", function(v) Flags.AutoGrabFruit=v end)
+    MakeToggle(ContentScroll, "Auto Eat Fruit", "Tự động ăn Trái", function(v) Flags.AutoEatFruit=v end)
+    MakeToggle(ContentScroll, "Auto Store Fruit", "Tự động cất Trái vào kho", function(v) Flags.AutoStoreFruit=v end)
+    MakeSection(ContentScroll, "Mastery")
+    MakeToggle(ContentScroll, "Auto Mastery Fruits", "Cày thông thạo trái", function(v) end)
+    MakeToggle(ContentScroll, "Auto Mastery Gun", "Cày thông thạo súng", function(v) end)
+    MakeToggle(ContentScroll, "Auto Mastery All Sword", "Cày thông thạo kiếm", function(v) end)
+end)
+
+MakeSideBtn("PVP", function()
+    MakeSection(ContentScroll, "PVP")
+    MakeToggle(ContentScroll, "Kill Aura", "Tự động tấn công mob gần", function(v) Flags.KillAura=v end)
+    MakeToggle(ContentScroll, "Auto Block", "Tự động đỡ đòn", function(v) Flags.AutoBlock=v end)
+    MakeToggle(ContentScroll, "Auto Observation", "Tự động bật Instinct", function(v) Flags.AutoObservation=v end)
+    MakeToggle(ContentScroll, "Auto Haki", "Tự động bật Buso Haki", function(v) Flags.AutoHaki=v end)
+    MakeToggle(ContentScroll, "Walk On Water", "Đi trên mặt nước", function(v) Flags.WalkOnWater=v end)
+    MakeToggle(ContentScroll, "Noclip", "Xuyên tường", function(v) Flags.Noclip=v end)
+    MakeToggle(ContentScroll, "Infinite Jump", "Nhảy vô hạn", function(v) Flags.InfiniteJump=v end)
+    MakeToggle(ContentScroll, "Teleport to Players", "Bay đến người chơi", function(v) end)
+end)
+
+MakeSideBtn("Esp", function()
+    MakeSection(ContentScroll, "ESP/Định Vị")
+    MakeToggle(ContentScroll, "Esp Berries", "Hiển thị vị trí Berries", function(v) Flags.ESPBerries=v; if not v then ClearESP() end end)
+    MakeToggle(ContentScroll, "Esp Players", "Hiển thị người chơi + HP", function(v) Flags.ESPPlayers=v; if not v then ClearESP() end end)
+    MakeToggle(ContentScroll, "Esp Chests", "Hiển thị vị trí rương", function(v) Flags.ESPChests=v; if not v then ClearESP() end end)
+    MakeToggle(ContentScroll, "Esp Fruits", "Hiển thị Trái Ác Quỷ", function(v) Flags.ESPFruits=v; if not v then ClearESP() end end)
+    MakeToggle(ContentScroll, "Esp Boss", "Hiển thị vị trí Boss", function(v) Flags.ESPBoss=v; if not v then ClearESP() end end)
+    MakeToggle(ContentScroll, "Esp Sea Beast", "Hiển thị Sea Beast", function(v) Flags.ESPSeaBeast=v; if not v then ClearESP() end end)
+    MakeToggle(ContentScroll, "Esp Island Location", "Hiển thị vị trí đảo", function(v) end)
+    MakeButton(ContentScroll, "Clear All ESP", "Xóa tất cả ESP", function() ClearESP() end)
+end)
+
+MakeSideBtn("Quest And Item", function()
+    MakeSection(ContentScroll, "Skull Guitar")
+    MakeToggle(ContentScroll, "Auto Skull Guitar", "Tự động làm quest Skull Guitar", function(v) end)
+    MakeToggle(ContentScroll, "Auto Farm Material Skull Guitar", "Cày nguyên liệu", function(v) end)
+    MakeSection(ContentScroll, "Tushita + Yama")
+    MakeToggle(ContentScroll, "Auto Elite Quest", "", function(v) end)
+    MakeToggle(ContentScroll, "Auto Tushita Sword", "Lấy kiếm Tushita", function(v) end)
+    MakeToggle(ContentScroll, "Auto Yama Sword", "Lấy kiếm Yama", function(v) end)
+    MakeSection(ContentScroll, "Cursed Dual Katana")
+    MakeToggle(ContentScroll, "Auto Get CDK", "", function(v) end)
+    MakeToggle(ContentScroll, "Auto Yama CDK", "", function(v) end)
+    MakeToggle(ContentScroll, "Auto Tushita CDK", "", function(v) end)
+    MakeToggle(ContentScroll, "Auto Bisento V2", "", function(v) end)
+    MakeToggle(ContentScroll, "Auto Warden Sword", "", function(v) end)
+    MakeToggle(ContentScroll, "Auto Twin Hooks", "", function(v) end)
+    MakeToggle(ContentScroll, "Auto Serpent Bow", "", function(v) end)
+end)
+
+MakeSideBtn("Fruits / Raid", function()
+    MakeSection(ContentScroll, "Fruits")
+    MakeButton(ContentScroll, "Random Fruits", "Mua ngẫu nhiên trái", function() end)
+    MakeToggle(ContentScroll, "Auto Grab Fruit", "Tự động nhặt trái", function(v) Flags.AutoGrabFruit=v end)
+    MakeSection(ContentScroll, "Raiding")
+    MakeToggle(ContentScroll, "Auto Start Raid", "Bắt đầu vào raid", function(v) Flags.AutoFarmRaid=v end)
+    MakeToggle(ContentScroll, "Auto Complete Raid", "Hoàn thành raid", function(v) end)
+    MakeToggle(ContentScroll, "Auto Awakening", "Tự động thức tỉnh", function(v) end)
+end)
+
+MakeSideBtn("Teleport Island", function()
+    MakeSection(ContentScroll, "🌊 Sea 1 - East Blue")
+    local sea1 = {"Starter Island","Marine Starter","Pirate Village","Jungle","Pirate Ship","Desert","Middle Town","Frozen Village","Marine Fortress","Skylands"}
+    for _, name in ipairs(sea1) do
+        MakeButton(ContentScroll, name, "", function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") and Islands[name] then
+                char.HumanoidRootPart.CFrame = Islands[name]
+            end
+        end)
+    end
+    MakeSection(ContentScroll, "🌊 Sea 2 - Dressrosa")
+    local sea2 = {"Dressrosa","Greenbit","Fountain City","Kingdom of Rose","Magma Village","Underwater City"}
+    for _, name in ipairs(sea2) do
+        MakeButton(ContentScroll, name, "", function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") and Islands[name] then
+                char.HumanoidRootPart.CFrame = Islands[name]
+            end
+        end)
+    end
+    MakeSection(ContentScroll, "🌊 Sea 3 - Zou")
+    local sea3 = {"Port Town","Hydra Island","Great Tree","Floating Turtle"}
+    for _, name in ipairs(sea3) do
+        MakeButton(ContentScroll, name, "", function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") and Islands[name] then
+                char.HumanoidRootPart.CFrame = Islands[name]
+            end
+        end)
+    end
+end)
+
+MakeSideBtn("Server", function()
+    MakeSection(ContentScroll, "Thông Tin Server")
+    MakeLabel(ContentScroll, "🆔 Job ID: "..tostring(game.JobId):sub(1,20).."...", 40)
+    MakeButton(ContentScroll, "Sao Chép Job ID", "", function()
+        setclipboard(tostring(game.JobId))
+        game:GetService("StarterGui"):SetCore("SendNotification",{Title="✅";Text="Đã copy Job ID";Duration=2})
+    end)
+    MakeSection(ContentScroll, "Chuyển Server")
+    MakeToggle(ContentScroll, "Anti-Ban Server Hop", "Đổi server mỗi 30 phút", function(v)
+        Flags.AntiServerHop=v
+        if v then task.spawn(function()
+            while Flags.AntiServerHop do
+                task.wait(1800)
+                if Flags.AntiServerHop then game:GetService("TeleportService"):Teleport(game.PlaceId,LocalPlayer) end
+            end
+        end) end
+    end)
+    MakeButton(ContentScroll, "Rejoin Server", "Vào lại server hiện tại", function()
+        game:GetService("TeleportService"):Teleport(game.PlaceId,LocalPlayer)
+    end)
+    MakeButton(ContentScroll, "Random Server Hop", "Chuyển server ngẫu nhiên", function()
+        pcall(function()
+            local data = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"))
+            for _, s in pairs(data.data) do
+                if s.id ~= game.JobId and s.playing < s.maxPlayers then
+                    game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId,s.id,LocalPlayer)
+                    return
+                end
+            end
+        end)
+    end)
+    MakeButton(ContentScroll, "Lowest Player Server", "Server ít người nhất", function()
+        pcall(function()
+            local data = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"))
+            local best,bestCount=nil,math.huge
+            for _, s in pairs(data.data) do
+                if s.id ~= game.JobId and s.playing < bestCount then best=s.id; bestCount=s.playing end
+            end
+            if best then game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId,best,LocalPlayer) end
+        end)
+    end)
+end)
+
+MakeSideBtn("Draco/Prehistoric", function()
+    MakeSection(ContentScroll, "Drago Trial")
+    MakeToggle(ContentScroll, "Auto Drago V1", "Làm Nhiệm Vụ 1", function(v) end)
+    MakeToggle(ContentScroll, "Auto Drago V2", "Tiêu diệt Hải Tặc Rừng", function(v) end)
+    MakeToggle(ContentScroll, "Auto Drago V3", "Tham gia sự kiện biển", function(v) end)
+    MakeToggle(ContentScroll, "Auto Complete Trial Draco V4", "Hoàn thành Trial tộc Rồng", function(v) end)
+    MakeSection(ContentScroll, "Prehistoric Island")
+    MakeToggle(ContentScroll, "Auto Find Prehistoric Island", "Tìm Đảo Tiền Sử", function(v) end)
+    MakeToggle(ContentScroll, "Delete Lava", "Xóa Lava", function(v)
+        if v then
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("BasePart") and (obj.Name:lower():find("lava") or obj.Name:lower():find("magma")) then
+                    obj.CanCollide=false; obj.Transparency=1
+                end
+            end
+        end
+    end)
+    MakeToggle(ContentScroll, "Auto Collect Dino Bones", "Thu thập Xương Khủng Long", function(v) Flags.AutoDinoBones=v end)
+    MakeToggle(ContentScroll, "Auto Collect Dragon Eggs", "Thu thập Trứng Rồng", function(v) Flags.AutoDragonEggs=v end)
+end)
+
+MakeSideBtn("Sea Event", function()
+    MakeSection(ContentScroll, "Setting Sail")
+    MakeButton(ContentScroll, "Buy Boats", "Mua thuyền", function() end)
+    MakeToggle(ContentScroll, "Auto Sail Boat", "Tự đi ra biển", function(v) end)
+    MakeSection(ContentScroll, "Sea Events")
+    MakeToggle(ContentScroll, "Auto Escape Rough Sea", "Thoát khỏi Rough Sea", function(v) end)
+    MakeToggle(ContentScroll, "Auto Farm Sea Event", "Farm mục tiêu đã chọn", function(v) end)
+    MakeSection(ContentScroll, "Kitsune Island")
+    MakeToggle(ContentScroll, "Auto Find Kitsune Island", "Tự động tìm đảo", function(v) end)
+    MakeToggle(ContentScroll, "Auto Collect Azure Ember", "Auto Nhặt", function(v) end)
+    MakeToggle(ContentScroll, "Auto Trade Azure Ember", "Tự Động Đổi", function(v) end)
+    MakeButton(ContentScroll, "Trade Items Azure", "Đổi vật phẩm", function() end)
+end)
+
+MakeSideBtn("Settings", function()
+    MakeSection(ContentScroll, "General")
+    MakeButton(ContentScroll, "Join Marines", "Vào Team Hải Quân", function()
+        pcall(function() game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("JoinTeam","Marines") end)
+    end)
+    MakeButton(ContentScroll, "Join Pirates", "Vào Team Hải Tặc", function()
+        pcall(function() game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("JoinTeam","Pirates") end)
+    end)
+    MakeButton(ContentScroll, "Low CPU / Tăng FPS", "Tắt hiệu ứng tăng FPS", function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then v.Enabled=false end
+        end
+        game:GetService("Lighting").GlobalShadows=false
+        game:GetService("StarterGui"):SetCore("SendNotification",{Title="✅ Low CPU";Text="Đã tăng FPS";Duration=2})
+    end)
+    MakeButton(ContentScroll, "Remove Sky Fog", "Xóa sương mù tăng FPS", function()
+        game:GetService("Lighting").FogEnd=100000
+        game:GetService("Lighting").FogStart=100000
+        game:GetService("StarterGui"):SetCore("SendNotification",{Title="✅";Text="Đã xóa sương mù";Duration=2})
+    end)
+    MakeSection(ContentScroll, "Toggles")
+    MakeToggle(ContentScroll, "Bring Mobs", "Gom quái vào người", function(v) Flags.BringMobs=v end)
+    MakeToggle(ContentScroll, "Anti AFK", "Chống AFK", function(v) Flags.AntiAFK=v end)
+    MakeToggle(ContentScroll, "Anti Lag", "Giảm lag tăng FPS", function(v) Flags.AntiLag=v end)
+    MakeToggle(ContentScroll, "Noclip", "Xuyên tường", function(v) Flags.Noclip=v end)
+    MakeToggle(ContentScroll, "Infinite Jump", "Nhảy vô hạn", function(v) Flags.InfiniteJump=v end)
+    MakeToggle(ContentScroll, "Remove Hit VFX", "Xóa hiệu ứng đánh", function(v) Flags.RemoveHitVFX=v end)
+    MakeToggle(ContentScroll, "Remove Death VFX", "Xóa hiệu ứng chết", function(v)
+        Flags.RemoveDeathVFX=v
+        if v then
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("ParticleEmitter") or obj:IsA("Trail") then obj.Enabled=false end
+            end
+        end
+    end)
+    MakeToggle(ContentScroll, "Rejoin On Death", "Tự rejoin khi chết", function(v) Flags.RejoinOnDeath=v end)
+    MakeToggle(ContentScroll, "Auto Upgrade Stats", "Tự động nâng stat", function(v) Flags.AutoUpgradeStats=v end)
+    MakeToggle(ContentScroll, "Panic Mode", "Ẩn UI khẩn cấp", function(v) Main.Visible=not v end)
+    MakeSection(ContentScroll, "Speed Settings")
+    MakeToggle(ContentScroll, "Change Speed", "Thay đổi tốc độ", function(v)
+        Flags.Speed=v
+        if not v then
+            local char=LocalPlayer.Character
+            if char and char:FindFirstChild("Humanoid") then char.Humanoid.WalkSpeed=16 end
+        end
+    end)
+    MakeSlider(ContentScroll, "Speed Value", 16, 500, 100, function(val) Flags.SpeedVal=val end)
+    MakeToggle(ContentScroll, "Walk On Water", "Đi trên mặt nước", function(v) Flags.WalkOnWater=v end)
+end)
+
+SideList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    SideScroll.CanvasSize = UDim2.new(0, 0, 0, SideList.AbsoluteContentSize.Y + 10)
+end)
+
+for _, c in pairs(SideScroll:GetChildren()) do
+    if c:IsA("TextButton") and c.Text == "Discord" then
+        c:Fire("MouseButton1Click")
+        break
+    end
+end
+
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "👑 BẢO HUB"; Text = "UI đã khởi tạo xong!"; Duration = 3;
+})
