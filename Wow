@@ -1,0 +1,111 @@
+if game:GetService("CoreGui"):FindFirstChild("Rayfield") then
+    game:GetService("CoreGui"):FindFirstChild("Rayfield"):Destroy()
+end
+
+if not game:IsLoaded() then game.Loaded:Wait() end
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "👑 BẢO HUB",
+   LoadingTitle = "BẢO SYSTEM LOADING...",
+   LoadingSubtitle = "by gia bảo",
+   ConfigurationSaving = {Enabled = true, FolderName = "BaoHubConfig"},
+   KeySystem = false,
+   Theme = "DarkBlue"
+})
+
+local TabHome = Window:CreateTab("🏠 Trang Chủ", 4483362458)
+TabHome:CreateSection("Thông Tin")
+TabHome:CreateLabel("👤 Người Tạo: Bảo & Bi Gấu Chíp")
+TabHome:CreateButton({Name = "📋 Copy Discord", Callback = function() setclipboard("https://discord.gg/kasumi") end})
+
+local TabMain = Window:CreateTab("📜 Script Hubs", 4483362458)
+
+TabMain:CreateSection("Auto Farm (No Key)")
+
+TabMain:CreateButton({
+   Name = "🔴 Redz Hub (Best Farm)",
+   Callback = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Scripts/refs/heads/main/main.luau"))({JoinTeam="Pirates",Translator=true}) end,
+})
+
+TabMain:CreateButton({
+   Name = "🎯 Night Bounty (Auto Hunt)",
+   Callback = function()
+       loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/2ffcdb62773f587bfb9eb0d52bb35b0c.lua"))()
+   end,
+})
+
+TabMain:CreateButton({
+   Name = "🐻 Bear Hub",
+   Callback = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/Huylovemy/Bearhudz/refs/heads/main/Bearhud.lua"))() end,
+})
+
+TabMain:CreateButton({
+   Name = "🚀 Speed Hub X",
+   Callback = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua"))() end,
+})
+
+-- DI CHUYỂN TRẨU BANANA VÀO MỤC KEY NHƯ BRO MUỐN
+TabMain:CreateSection("🔐 Script Cần Key / VIP")
+
+TabMain:CreateButton({
+   Name = "🍌 Trẩu Banana V1 (Cần Key)",
+   Callback = function()
+       loadstring(game:HttpGet("https://raw.githubusercontent.com/trungdao2k4/trauroblox/refs/heads/main/traubluev1"))()
+   end,
+})
+
+TabMain:CreateButton({
+   Name = "🌅 Rise Hub",
+   Callback = function() loadstring(game:HttpGet("https://rise-evo.xyz/apiv3/main.lua"))() end,
+})
+
+TabMain:CreateSection("🌐 Danh Sách Khác")
+local Scripts = {
+   ["👌 OK Hub"] = "https://raw.githubusercontent.com/fakekuri/Okhubhere/refs/heads/main/MainBloxFruit.lua",
+   ["⚡ God Hub"] = "https://raw.githubusercontent.com/shinichi-dz/phucshinsayhi/refs/heads/main/Loader.lua",
+   ["🌀 Maru Hub"] = "https://raw.githubusercontent.com/longhihilonghihi-hub/MaruHubV1/refs/heads/main/MainV1.Lua",
+}
+
+for name, url in pairs(Scripts) do
+   TabMain:CreateButton({
+      Name = name,
+      Callback = function() loadstring(game:HttpGet(url))() end,
+   })
+end
+
+local TabChill = Window:CreateTab("🌙 Chill Time", 4483362458)
+TabChill:CreateSection("🎵 Âm Nhạc")
+local sound = Instance.new("Sound", game:GetService("SoundService"))
+sound.Volume = 0.5
+sound.Looped = true
+local tracks = {
+    {name = "Ai Đưa Em Về", id = "119589720384457"},
+    {name = "Sleeping City", id = "109138957141221"},
+}
+for _, track in ipairs(tracks) do
+    TabChill:CreateButton({
+        Name = "▶ " .. track.name,
+        Callback = function()
+            sound:Stop()
+            sound.SoundId = "rbxassetid://" .. track.id
+            sound:Play()
+        end,
+    })
+end
+TabChill:CreateSlider({
+	Name = "🔊 Âm Lượng",
+	Range = {0, 100},
+	Increment = 1,
+	CurrentValue = 50,
+	Callback = function(val) sound.Volume = val / 100 end,
+})
+TabChill:CreateButton({ Name = "⏹ Dừng Nhạc", Callback = function() sound:Stop() end })
+
+Rayfield:Notify({
+   Title = "BẢO HUB LOADED",
+   Content = "thg nào xài là gay!",
+   Duration = 5,
+   Image = 4483362458,
+})
